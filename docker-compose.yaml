@@ -1,0 +1,12 @@
+version: '3'
+services:
+  app:
+    image: maxfrei750/mediawiki_backup:latest
+    build:
+      context: .
+    env_file:
+      - .env
+    volumes:
+      # - ./rsnapshot.conf:/etc/rsnapshot.conf
+      - ./snapshots:/snapshots
+      - ./ssh_key:/ssh-id
