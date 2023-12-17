@@ -39,10 +39,7 @@ RUN touch /etc/rsnapshot.conf && \
     chmod 777 /var/run && \
     mkdir /snapshots && \
     chown -R ${USER}:${USER} /snapshots && \
-    chmod 777 /snapshots && \
-    touch var/spool/cron/crontabs/${USER} && \
-    chown ${USER}:${USER} /var/spool/cron/crontabs/${USER} && \
-    chmod 777 /var/spool/cron/crontabs/${USER}
+    chmod 777 /snapshots
 VOLUME /snapshots
 
 # Set the default user
