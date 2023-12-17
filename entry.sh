@@ -84,9 +84,9 @@ echo "rsnapshot ${CONFIGTEST}"
 if [ "${CONFIGTEST}" = "Syntax OK" ]
 then
     # Syntax is OK, run rsnapshot once and start cron
-    echo ""
-    echo "Running rsnapshot once"
-    rsnapshot -V hourly
+    # echo ""
+    # echo "Running rsnapshot once"
+    # rsnapshot -V hourly
     echo ""
     echo "Starting cron"
     sudo /usr/sbin/crond -f -d 8
