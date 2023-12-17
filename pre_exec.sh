@@ -1,6 +1,7 @@
 #! /bin/sh
 
 # This script is executed before rsnapshot is run and creates a database backup.
+source ~/env
 
 # Function to execute an SSH command and check for errors
 execute_ssh_command() {
@@ -18,5 +19,5 @@ execute_ssh_command() {
 
 echo ""
 echo "Create database backup"
-execute_ssh_command "mysqldump -h ${DB_HOSTNAME} -u ${DB_USER} -p${DB_PASSWORD} ${DB_NAME} | gzip -c > ${REMOTE_MEDIAWIKI_PATH}/database_backup.sql.gz" \
+execute_ssh_command "mysqldump -vh ${DB_HOSTNAME} -u ${DB_USER} -p${DB_PASSWORD} ${DB_NAME} | gzip -vc > ${REMOTE_MEDIAWIKI_PATH}/database_backup.sql.gz" \
      "SSH command to create database backup failed"

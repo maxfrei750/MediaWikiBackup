@@ -2,9 +2,10 @@ FROM alpine
 LABEL maintainer="Max Frei <maxfrei@web.de>"
 
 # Install rsnapshot
-RUN apk add --no-cache rsnapshot tzdata curl
+RUN apk add --no-cache rsnapshot tzdata curl sudo
 
 ARG USER=appuser
+RUN echo "${USER} ALL=(ALL) NOPASSWD: /usr/sbin/crond, /usr/bin/crontab" >> /etc/sudoers
 
 # Set default values for environment variables
 ENV BACKUP_NAME=localhost
@@ -14,7 +15,7 @@ ENV BACKUP_DAILY=3
 ENV BACKUP_WEEKLY=3
 ENV BACKUP_MONTHLY=3
 ENV BACKUP_YEARLY=3
-ENV CRON_HOURLY="30 * * * *"
+ENV CRON_HOURLY="0 * * * *"
 ENV CRON_DAILY="30 23 * * *"
 ENV CRON_WEEKLY="0 23 * * 0"
 ENV CRON_MONTHLY="30 22 1 * *"
@@ -32,13 +33,16 @@ RUN adduser -D ${USER}
 
 # make /etc/rsnapshot.conf available for any user
 RUN touch /etc/rsnapshot.conf && \
-    chown -R ${USER}:${USER} /etc/rsnapshot.conf && \
+    chmod 777 /etc/rsnapshot.conf  && \
     touch /var/run/rsnapshot.pid && \
     chmod 777 /var/run/rsnapshot.pid && \
     chmod 777 /var/run && \
-    chmod 777 /etc/crontabs/root && \
     mkdir /snapshots && \
-    chown -R ${USER}:${USER} /snapshots
+    chown -R ${USER}:${USER} /snapshots && \
+    chmod 777 /snapshots && \
+    touch var/spool/cron/crontabs/${USER} && \
+    chown ${USER}:${USER} /var/spool/cron/crontabs/${USER} && \
+    chmod 777 /var/spool/cron/crontabs/${USER}
 VOLUME /snapshots
 
 # Set the default user

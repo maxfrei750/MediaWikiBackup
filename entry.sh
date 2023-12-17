@@ -32,40 +32,51 @@ ssh_args		-i /ssh-id -o StrictHostKeychecking=no ${BACKUP_SSH_ARGS}
 verbose			1
 lockfile		/var/run/rsnapshot.pid
 backup			${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_MEDIAWIKI_PATH}	${BACKUP_NAME}/ ${BACKUP_OPTS}
-retain			startup	3
 EOF
 
-# create empty crontab for root
-# empty file, otherwise the cronjobs will be added with every container start.
-> /etc/crontabs/root
+# Write relevant environment variables to the cron file
+env_file_path=~/env
+echo "REMOTE_USER=${REMOTE_USER}" >> $env_file_path
+echo "REMOTE_HOST=${REMOTE_HOST}" >> $env_file_path
+echo "REMOTE_MEDIAWIKI_PATH=${REMOTE_MEDIAWIKI_PATH}" >> $env_file_path
+echo "DB_USER=${DB_USER}" >> $env_file_path
+echo "DB_PASSWORD=${DB_PASSWORD}" >> $env_file_path
+echo "DB_NAME=${DB_NAME}" >> $env_file_path
+echo "DB_HOSTNAME=${DB_HOSTNAME}" >> $env_file_path
+echo "HEALTH_CHECK_URL=${HEALTH_CHECK_URL}" >> $env_file_path
 
 # Dynamic parts - depending on the retain settings
 # This will also create the crontab
+TEMP_FILE=$(mktemp)
+
 if [ "${BACKUP_HOURLY}" -gt 0 ]
 then
     echo "retain	hourly	${BACKUP_HOURLY}">> /etc/rsnapshot.conf
-    echo "${CRON_HOURLY} rsnapshot hourly" >> /etc/crontabs/root
+    echo "${CRON_HOURLY} rsnapshot -V hourly" >> "${TEMP_FILE}"
 fi
 if [ "${BACKUP_DAILY}" -gt 0 ]
 then
     echo "retain	daily	${BACKUP_DAILY}">> /etc/rsnapshot.conf
-    echo "${CRON_DAILY} rsnapshot daily" >> /etc/crontabs/root
+    echo "${CRON_DAILY} rsnapshot -V daily" >> "${TEMP_FILE}"
 fi
 if [ "${BACKUP_WEEKLY}" -gt 0 ]
 then
     echo "retain	weekly	${BACKUP_WEEKLY}">> /etc/rsnapshot.conf
-    echo "${CRON_WEEKLY} rsnapshot weekly" >> /etc/crontabs/root
+    echo "${CRON_WEEKLY} rsnapshot -V weekly" >> "${TEMP_FILE}"
 fi
 if [ "${BACKUP_MONTHLY}" -gt 0 ]
 then
     echo "retain	monthly	${BACKUP_MONTHLY}">> /etc/rsnapshot.conf
-    echo "${CRON_MONTHLY} rsnapshot monthly" >> /etc/crontabs/root
+    echo "${CRON_MONTHLY} rsnapshot -V monthly" >> "${TEMP_FILE}"
 fi
 if [ "${BACKUP_YEARLY}" -gt 0 ]
 then
     echo "retain	yearly	${BACKUP_YEARLY}">> /etc/rsnapshot.conf
-    echo "${CRON_YEARLY} rsnapshot yearly" >> /etc/crontabs/root
+    echo "${CRON_YEARLY} rsnapshot -V yearly" >> "${TEMP_FILE}"
 fi
+
+# Install the crontab from the temporary file
+sudo crontab -u $(whoami) "${TEMP_FILE}"
 
 # Test the config
 CONFIGTEST=$(rsnapshot configtest)
@@ -75,10 +86,10 @@ then
     # Syntax is OK, run rsnapshot once and start cron
     echo ""
     echo "Running rsnapshot once"
-    rsnapshot startup
+    rsnapshot -V hourly
     echo ""
     echo "Starting cron"
-    /usr/sbin/crond -f
+    sudo /usr/sbin/crond -f -d 8
 fi
 
 
